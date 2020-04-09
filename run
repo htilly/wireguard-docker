@@ -75,7 +75,7 @@ external_ip
 # For debug printing provider
 echo "$(date): Current IP: $EXTERNAL_IP"
 echo "$(date): Validated IP: $VALIDATED_IP"
-            sleep 60;
+            sleep 70;
 done
 done
 

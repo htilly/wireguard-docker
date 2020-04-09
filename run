@@ -31,7 +31,7 @@ fi
 
 ### Get external IP and check with whois for the provider of that ip.
 function provider {
-PROVIDER=$(curl --silent --show-error --retry 10 --fail ifconfig.co | ( read ip ;whois $ip | grep -i netname | awk '{ print $2 }' ))
+PROVIDER=$(curl --silent --show-error --retry 10 --fail icanhazip.com | ( read ip ;whois $ip | grep -i netname | awk '{ print $2 }' ))
 }
 
 
@@ -43,7 +43,7 @@ function finish  {
 ## Firs validation of external IP
 provider
 if [[ $PROVIDER == *$EXPECTED_PROVIDER* ]]; then
-VALIDATED_IP=$(curl --silent --show-error --retry 10 --fail ifconfig.co)
+VALIDATED_IP=$(curl --silent --show-error --retry 10 --fail icanhazip.com)
 echo "$(date): ---INFO---  Validated the external IP: $VALIDATED_IP"
 else
 echo "i$(date): ---INFO---  Can't validate provider. Aborting"
@@ -52,7 +52,7 @@ fi
 
 ### Update the external IP
 function external_ip {
-EXTERNAL_IP=$(curl --silent --show-error --retry 10 --fail ifconfig.co)
+EXTERNAL_IP=$(curl --silent --show-error --retry 10 --fail icanhazip.com)
 }
 
 #Set the external IP

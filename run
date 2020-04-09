@@ -29,10 +29,9 @@ else
     ip route add to $LOCAL_NETWORK via $gw dev eth0
 fi
 
-### Get external IP and check with whois for the provider of that ip.
-function provider {
-PROVIDER=$(curl --silent --show-error --retry 10 --fail icanhazip.com | ( read ip ;whois $ip | grep -i netname | awk '{ print $2 }' ))
-}
+
+## Get the endpoint IP in the wg config
+endpoint_in_conf=$(grep -Po 'Endpoint\s=\s\K[^:]*' /etc/wireguard/wg0.conf | ( read hostname ;dig $hostname +short ))
 
 
 function finish  {
@@ -40,43 +39,31 @@ function finish  {
     wg-quick down wgnet0
 }
 
-## Firs validation of external IP
-provider
-if [[ $PROVIDER == *$EXPECTED_PROVIDER* ]]; then
-VALIDATED_IP=$(curl --silent --show-error --retry 10 --fail icanhazip.com)
-echo "$(date): ---INFO---  Validated the external IP: $VALIDATED_IP"
-else
-echo "i$(date): ---INFO---  Can't validate provider. Aborting"
-exit 1
-fi
 
-### Update the external IP
-function external_ip {
-EXTERNAL_IP=$(curl --silent --show-error --retry 10 --fail icanhazip.com)
+## Get the active endpoint from WireGuard
+function active_wg {
+        active_endpoint=$( wg | grep -Po 'endpoint:\s\K[^:]*')
 }
-
-#Set the external IP
-external_ip
 
 
 trap finish SIGTERM SIGINT SIGQUIT
 
-provider
-echo "$(date): ---INFO---  Current Provider: $PROVIDER"
-echo "$(date): ---INFO---  Excpected Provider: $EXPECTED_PROVIDER"
+active_wg
+#echo "$(date): ---INFO---  Endpoint in config: $endpoint_in_conf"
+#echo "$(date): ---INFO---  Active EndPoint : $active_endpoint"
 
 # Every minute we check to our IP address
- while [[ $EXTERNAL_IP == $VALIDATED_IP ]];
+ while [[ $endpoint_in_conf == $active_endpoint ]];
 do
 
-# Update the external IP
-external_ip
+# Update the active wg endpoint ip
+active_wg
 
-# For debug printing provider
-echo "$(date): Current IP: $EXTERNAL_IP"
-echo "$(date): Validated IP: $VALIDATED_IP"
-            sleep 70;
+# For debug printing endpoints
+echo "$(date): ---INFO---  Endpoint in config: $endpoint_in_conf"
+echo "$(date): ---INFO---  Active EndPoint : $active_endpoint"
+            sleep 10;
 done
 done
 
-echo "$(date): Expected VPN provider does not match external IP. Shuting down!!"
+echo "$(date): Expected endpoint not found in WireGuard. Shuting down!!"

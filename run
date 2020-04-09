@@ -1,6 +1,5 @@
 #!/bin/bash
 
-## The below is modified from https://github.com/activeeos/wireguard-docker
 
 # Find a Wireguard interface
 interfaces=`find /etc/wireguard -type f`
@@ -13,29 +12,71 @@ fi
 for interface in $interfaces; do
     echo "$(date): Starting Wireguard $interface"
     wg-quick up $interface
-done
+
 
 # Add masquerade rule for NAT'ing VPN traffic bound for the Internet
-
 if [[ $IPTABLES_MASQ -eq 1 ]]; then
-    echo "Adding iptables NAT rule"
+    echo "$(date): ---INFO---  Adding iptables NAT rule"
     iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 fi
 
-# Handle shutdown behavior
-finish () {
-    echo "$(date): Shutting down Wireguard"
-    for interface in $interfaces; do
-        wg-quick down $interface
-    done
-    if [[ $IPTABLES_MASQ -eq 1 ]]; then
-        iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
-    fi
+### Fix route back to local network
+if [[ -z $LOCAL_NETWORK ]]; then
+    echo "$(date): ---INFO--- No network provides. Ignoring route back to local network"
+else
+    echo "$(date): ---INFO---  Adding route back to local network: $LOCAL_NETWORK"
+    gw=$(ip route |awk '/default/ {print $3}')
+    ip route add to $LOCAL_NETWORK via $gw dev eth0
+fi
 
-    exit 0
+### Get external IP and check with whois for the provider of that ip.
+function provider {
+PROVIDER=$(curl --silent --show-error --retry 10 --fail ifconfig.co | ( read ip ;whois $ip | grep -i netname | awk '{ print $2 }' ))
 }
+
+
+function finish  {
+    echo "$(date): Shutting down vpn"
+    wg-quick down wgnet0
+}
+
+## Firs validation of external IP
+provider
+if [[ $PROVIDER == *$EXPECTED_PROVIDER* ]]; then
+VALIDATED_IP=$(curl --silent --show-error --retry 10 --fail ifconfig.co)
+echo "$(date): ---INFO---  Validated the external IP: $VALIDATED_IP"
+else
+echo "i$(date): ---INFO---  Can't validate provider. Aborting"
+exit 1
+fi
+
+### Update the external IP
+function external_ip {
+EXTERNAL_IP=$(curl --silent --show-error --retry 10 --fail ifconfig.co)
+}
+
+#Set the external IP
+external_ip
+
 
 trap finish SIGTERM SIGINT SIGQUIT
 
-sleep infinity &
-wait $!
+provider
+echo "$(date): ---INFO---  Current Provider: $PROVIDER"
+echo "$(date): ---INFO---  Excpected Provider: $EXPECTED_PROVIDER"
+
+# Every minute we check to our IP address
+ while [[ $EXTERNAL_IP == $VALIDATED_IP ]];
+do
+
+# Update the external IP
+external_ip
+
+# For debug printing provider
+echo "$(date): Current IP: $EXTERNAL_IP"
+echo "$(date): Validated IP: $VALIDATED_IP"
+            sleep 60;
+done
+done
+
+echo "$(date): Expected VPN provider does not match external IP. Shuting down!!"

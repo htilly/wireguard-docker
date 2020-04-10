@@ -13,6 +13,17 @@ for interface in $interfaces; do
     echo "$(date): Starting Wireguard $interface"
     wg-quick up $interface
 
+## Verify thet wireguard module is installed:
+wg_module=`find /lib/modules/$(uname -r) -type f -name '*.ko' | grep -i wireguard`
+echo "Module output: $wg_module"
+
+if [[ -z $wg_module ]]; then
+    echo "$(date): Wireguard module not installed..  Installing" >&2
+    apt update ; apt install -y linux-headers-amd64 wireguard-dkms
+else
+    echo "Wireguard module seems to be installed: $wg_module      Moving on... "
+fi
+
 
 # Add masquerade rule for NAT'ing VPN traffic bound for the Internet
 if [[ $IPTABLES_MASQ -eq 1 ]]; then

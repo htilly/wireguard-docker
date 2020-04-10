@@ -8,33 +8,33 @@ Modification done with focus on using the container as a WireGuard client. Prima
 
 Example docker-compose:
 
-´´´
+```
 version: '3.4'
 services:
-wireguard:
-  container_name: wireguard
-  image: beta_wireguard:local
-  volumes:
-    - /config/wireguard:/etc/wireguard
-    - /lib/modules:/lib/modules
-  ports:
-    - 9929:9929/udp
-    - 888:80
-  restart: unless-stopped
-  cap_add:
-    - NET_ADMIN
-    - SYS_MODULE
-  security_opt:
-    - label:disable
-  sysctls:
-    - net.ipv6.conf.all.disable_ipv6=0
-    - net.ipv6.conf.default.forwarding=1
-    - net.ipv6.conf.all.forwarding=1
-    - net.ipv4.ip_forward=1
-  environment:
-    - LOCAL_NETWORK=192.168.200.0/16
-  privileged: true
-´´´
+  wireguard:
+    container_name: wireguard
+    image: beta_wireguard:local
+    volumes:
+      - /config/wireguard:/etc/wireguard
+      - /lib/modules:/lib/modules
+    ports:
+      - 9929:9929/udp
+      - 888:80
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    security_opt:
+      - label:disable
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv6.conf.default.forwarding=1
+      - net.ipv6.conf.all.forwarding=1
+      - net.ipv4.ip_forward=1
+    environment:
+      - LOCAL_NETWORK=192.168.200.0/16
+    privileged: true
+```
 
 # wireguard-docker
 Wireguard setup in Docker on Debian  kernel meant for a simple personal VPN

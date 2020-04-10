@@ -31,7 +31,7 @@ fi
 
 
 ## Get the endpoint IP in the wg config
-endpoint_in_conf=$(grep -Po 'Endpoint\s=\s\K[^:]*' /etc/wireguard/wg0.conf | ( read hostname ;dig $hostname +short ))
+endpoint_in_conf=$(grep -Po 'Endpoint\s=\s\K[^:]*' $interfaces | ( read hostname ;dig $hostname +short ))
 
 
 function finish  {

@@ -6,6 +6,8 @@ Modification done with focus on using the container as a WireGuard client. Prima
 
 - Implemented support for local routing. By default any container using this one as network won't be reachable from the local network. If applying "- LOCAL_NETWORK=x.x.x.x/x" the defined network will be routed back on eth0. Note: As for now this is "all or nothing". When applying a route back, all ports will be available from the selected network.
 
+- Automatically installs linux-headers-amd64 wireguard-dkms if not present...
+
 Example docker-compose:
 
 ```
